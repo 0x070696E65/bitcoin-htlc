@@ -5,8 +5,6 @@ import { lock } from "./lock"
 import { withdraw } from "./withdraw"
 import { refund } from "./refund"
 
-import {witnessStackToScriptWitness} from './witnessStackToScriptWitness';
-
 const ECPair = ECPairFactory(ecc);
 
 const network = bitcoin.networks.testnet
