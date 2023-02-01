@@ -121,7 +121,7 @@ export function getUtxos({ address, testnet = false }: any): Promise<[]> {
         .get(endpoint)
         .then((res) => {
             let txrefs: any = [];
-            if(res.data.txrefs != undefined) txrefs.concat(res.data.txrefs);
+            if(res.data.txrefs != undefined) txrefs = txrefs.concat(res.data.txrefs);
             if(res.data.unconfirmed_txrefs != undefined) txrefs = txrefs.concat(res.data.unconfirmed_txrefs);
             const ret: any = [];
             for (let len = txrefs.length, i = 0; i < len; i++) {
