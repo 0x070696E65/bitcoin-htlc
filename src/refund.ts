@@ -4,9 +4,11 @@ import {witnessStackToScriptWitness} from './witnessStackToScriptWitness';
 import { postTransaction, getTransactionData } from "./utils";
 const bip65 = require('bip65');
 
-export async function refund(network: bitcoin.networks.Network, testnet: boolean, baseUrl: string, txId: string, contractAddress: string, witnessScript: string, lockBlockHeight: number, sender: ECPairInterface, feeSat: number){
+export async function refund(network: bitcoin.networks.Network, testnet: boolean, baseUrl: string, txId: string, contractAddress: string, witnessScript: string, sender: ECPairInterface, feeSat: number){
     const psbt = new bitcoin.Psbt({network});
-    const timelock = bip65.encode({blocks: lockBlockHeight})
+    const decompiled = bitcoin.script.decompile(Buffer.from(witnessScript, "hex"))
+    if(decompiled != null && decompiled[6] != null) throw new Error("script hasn't lock time");
+    const timelock = bip65.encode({blocks: bitcoin.script.number.decode((decompiled[6] as Buffer))})
     psbt.setLocktime(timelock)
 
     const senderAddress = bitcoin.payments.p2wpkh({ pubkey: sender.publicKey, network }).address;
