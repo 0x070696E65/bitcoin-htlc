@@ -68,5 +68,5 @@ export async function withdraw(network: bitcoin.networks.Network, testnet: boole
     const txHex = psbt.extractTransaction().toHex();
     console.log(txHex)
     const result = await postTransaction(baseUrl, txHex, testnet)
-    console.log(result);
+    console.log('Transaction hash:', result.tx.hash)
 }

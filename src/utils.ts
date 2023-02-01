@@ -1,8 +1,6 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import axios from "axios";
-import { ECPairInterface, Signer } from 'ecpair';
 const crypto = require('crypto');
-const Wif = require('wif');
 
 export interface HashPair {
     secret: string;
@@ -80,7 +78,7 @@ export function buildAndSignTx({
         value: changeSat,
     });
 
-    console.log("\nトランザクション詳細:");
+    console.log("トランザクション詳細:");
     console.log("送金元:", address);
     console.log("着金先:", recipient);
     console.log("現在の送金元UTXOトータル残高(satoshi):", total);
@@ -122,7 +120,9 @@ export function getUtxos({ address, testnet = false }: any): Promise<[]> {
         axios
         .get(endpoint)
         .then((res) => {
-            const txrefs = res.data.txrefs;
+            let txrefs: any = [];
+            if(res.data.txrefs != undefined) txrefs.concat(res.data.txrefs);
+            if(res.data.unconfirmed_txrefs != undefined) txrefs = txrefs.concat(res.data.unconfirmed_txrefs);
             const ret: any = [];
             for (let len = txrefs.length, i = 0; i < len; i++) {
                 const item = txrefs[i];

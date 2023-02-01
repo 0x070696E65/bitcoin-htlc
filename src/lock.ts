@@ -7,18 +7,16 @@ export async function lock(network: bitcoin.networks.Network, testnet: boolean, 
     const blockHeight = await getCurrentBlockHeight(baseUrl);
     const TIMELOCK = blockHeight + lockHeight;
     const timelock = bip65.encode({blocks: TIMELOCK})
-    console.log('Timelock expressed in block height:')
-    console.log(timelock)
+    console.log('Timelock expressed in block height: ', timelock)
     const hashPair = createHashPair();
-    console.log("proof:  "+hashPair.proof)
-    console.log("secret: "+hashPair.secret)
+    console.log("proof:", hashPair.proof)
+    console.log("secret:", hashPair.secret)
     const swapContract = swapContractGenerator(receiver.publicKey, sender.publicKey, hashPair.secret, timelock)
     console.log('Swap contract (witness script):')
     console.log(swapContract.toString('hex'))
 
     const p2wsh = bitcoin.payments.p2wsh({redeem: {output: swapContract, network}, network})
-    console.log('P2WSH swap smart contract address:')
-    console.log(p2wsh.address)
+    console.log('P2WSH swap smart contract address:', p2wsh.address)
 
     const senderAddress = bitcoin.payments.p2wpkh({ pubkey: sender.publicKey, network }).address;
     const contractAddress = p2wsh.address;
@@ -42,8 +40,7 @@ export async function lock(network: bitcoin.networks.Network, testnet: boolean, 
     console.log('Transaction hexadecimal:')
     console.log(txHex)
     const result = await postTransaction(baseUrl, txHex, testnet)
-    console.log('Transaction hash:')
-    console.log(result.tx.hash);
+    console.log('Transaction hash:', result.tx.hash)
 };
 
 function swapContractGenerator(receiverPublicKey: Buffer, userRefundPublicKey: Buffer, PAYMENT_HASH: string, timelock: number) {

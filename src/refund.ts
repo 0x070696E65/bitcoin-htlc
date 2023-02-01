@@ -71,5 +71,5 @@ export async function refund(network: bitcoin.networks.Network, testnet: boolean
     const txHex = psbt.extractTransaction().toHex();
     console.log(txHex)
     const result = await postTransaction(baseUrl, txHex, testnet)
-    console.log(result);
+    console.log('Transaction hash:', result.tx.hash)
 }
