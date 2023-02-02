@@ -39,8 +39,10 @@ export async function lock(network: bitcoin.networks.Network, testnet: boolean, 
     });
     console.log('Transaction hexadecimal:')
     console.log(txHex)
-    const result = await postTransaction(baseUrl, txHex, testnet)
-    console.log('Transaction hash:', result.tx.hash)
+
+    postTransaction(baseUrl, txHex, testnet)
+    .then(result=>console.log('Transaction hash:', result.tx.hash))
+    .catch(err=>console.error(err))
 };
 
 function swapContractGenerator(receiverPublicKey: Buffer, userRefundPublicKey: Buffer, PAYMENT_HASH: string, timelock: number) {

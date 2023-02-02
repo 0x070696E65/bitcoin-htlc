@@ -158,7 +158,7 @@ export async function getTransactionData(baseUrl: string, txId: string): Promise
         })
     })
 }
-    
+
 export async function postTransaction(baseUrl: string, txHex: string, testnet = false): Promise<any> {
     const endpoint = `${baseUrl}/txs/push`;
     console.log("Broadcasting Transaction to " + endpoint);
