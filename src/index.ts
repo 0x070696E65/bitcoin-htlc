@@ -19,11 +19,11 @@ const Bob = ECPair.fromWIF(bob[1].wif, network);
 (async()=>{
   const sendingSat = 5000;
   const feeSat = 1700;
-  const txId = "98c146d01cb9536e984e7ce4a7eabce5b154e8d1cd62490285ebdcce42ed2844"
-  const contractAddress = "tb1qp8tdj5vck9s56lsyzs02sn7ljlmdjgkxlyt0q9y3javmsh44jw9qy6489s"
-  const witnessScript = "aa2006004014b130c9aa363e3b0c3f5856a139ec5c0ad2f86035673a9feceaa3f80487632103745c9aceb84dcdeddf2c3cdc1edb0b0b5af2f9bf85612d73fa6394758eaee35d670392e724b17521027efbabf425077cdbceb73f6681c7ebe2ade74a65ea57ebcf0c42364d3822c59068ac"
-  const proof = "e049d453b5de923fb495d0ace521f94ea515232ea332bb27432f48aec64a5879"
-  const lockTime = 1;
+  const txId = "e3d62b3a192dfe17f4c90f68758de164f1ae25aff8a4dd73d8e6a65dc6181f90"
+  const contractAddress = "tb1qtrd3hq2h66lf7p86kq523jn4adeak8c7zulw9460yf5wz4x88ngqu3ja0j"
+  const witnessScript = "aa20f296feceb54490af7fa0085d8da1657a0092a00750cb0b28caec10268425b57687632103745c9aceb84dcdeddf2c3cdc1edb0b0b5af2f9bf85612d73fa6394758eaee35d670333e824b17521027efbabf425077cdbceb73f6681c7ebe2ade74a65ea57ebcf0c42364d3822c59068ac"
+  const proof = "32cf8ebe1a431bce781aaa47f1ca8573aeb5dcba235ebdf06458b938304d5adf"
+  const lockTime = 2;
   //lock(network, true, baseUrl, lockTime, Alice, Bob, sendingSat, feeSat);
   //withdraw(network, true, baseUrl, txId, contractAddress, witnessScript, Bob, proof, feeSat);
   //refund(network, true, baseUrl, txId, contractAddress, witnessScript, Alice, feeSat);

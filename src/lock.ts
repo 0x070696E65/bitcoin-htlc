@@ -1,10 +1,10 @@
 import * as bitcoin from 'bitcoinjs-lib';
-import { getCurrentBlockHeight, createHashPair, getUtxos, buildAndSignTx, postTransaction} from './utils'
+import { getCurrentBlockHeight, createHashPair, getUtxos, buildAndSignTx, postTransaction } from './utils'
 import { ECPairInterface } from 'ecpair';
 const bip65 = require('bip65');
 
 export async function lock(network: bitcoin.networks.Network, testnet: boolean, baseUrl: string, lockHeight: number, sender: ECPairInterface, receiver: ECPairInterface, sendingSat: number, feeSat: number){
-    const blockHeight = await getCurrentBlockHeight(baseUrl);
+    const blockHeight = await getCurrentBlockHeight();
     const TIMELOCK = blockHeight + lockHeight;
     const timelock = bip65.encode({blocks: TIMELOCK})
     console.log('Timelock expressed in block height: ', timelock)
@@ -22,12 +22,14 @@ export async function lock(network: bitcoin.networks.Network, testnet: boolean, 
     const contractAddress = p2wsh.address;
 
     // UTXOを取得
-    const utxos = await getUtxos({ address: senderAddress, testnet });
+    const utxos = await getUtxos({ address: senderAddress });
+
     if (!utxos || utxos.length <= 0) {
         console.log(`ERROR: 指定されたアドレス ${senderAddress} には現在利用可能なUTXOがありませんでした。`);
         return process.exit(0);
     }
     // トランザクションHEXを作成
+    //const txHex = buildAndSignTx({
     const txHex = buildAndSignTx({
         sender,
         address: senderAddress,
@@ -40,8 +42,8 @@ export async function lock(network: bitcoin.networks.Network, testnet: boolean, 
     console.log('Transaction hexadecimal:')
     console.log(txHex)
 
-    postTransaction(baseUrl, txHex, testnet)
-    .then(result=>console.log('Transaction hash:', result.tx.hash))
+    postTransaction(txHex)
+    .then(result=>console.log('Transaction hash:', result))
     .catch(err=>console.error(err))
 };
 

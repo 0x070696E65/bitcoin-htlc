@@ -6,15 +6,13 @@ import { postTransaction, getTransactionData } from "./utils";
 export async function withdraw(network: bitcoin.networks.Network, testnet: boolean, baseUrl: string, txId: string, contractAddress: string, witnessScript: string, receiver: ECPairInterface, preImage: string, feeSat: number){
     const psbt = new bitcoin.Psbt({network});
     const receiverAddress = bitcoin.payments.p2wpkh({ pubkey: receiver.publicKey, network }).address;
-    const txInfo = await getTransactionData(baseUrl, txId);
-    let totalValue = 0;
+    const txInfo = await getTransactionData(txId);
     let value = 0;
 
     let index = 0;
-    for(let i = 0; i < txInfo.outputs.length; i++){
-        totalValue += txInfo.outputs[i].value;
-        if(txInfo.outputs[i].addresses[0] == contractAddress){
-            value = txInfo.outputs[i].value;
+    for(let i = 0; i < txInfo.vout.length; i++){
+        if(txInfo.vout[i].scriptpubkey_address == contractAddress){
+            value = txInfo.vout[i].value;
             index = i
         };
     }
@@ -56,7 +54,7 @@ export async function withdraw(network: bitcoin.networks.Network, testnet: boole
             output: Buffer.from(witnessScript, 'hex')
             }
         })
-
+        
         return {
             finalScriptSig: undefined,
             finalScriptWitness: witnessStackToScriptWitness(witnessStackClaimBranch.witness)
@@ -67,7 +65,8 @@ export async function withdraw(network: bitcoin.networks.Network, testnet: boole
     console.log('Transaction hexadecimal:')
     const txHex = psbt.extractTransaction().toHex();
     console.log(txHex)
-    postTransaction(baseUrl, txHex, testnet)
-    .then(result=>console.log('Transaction hash:', result.tx.hash))
+
+    postTransaction(txHex)
+    .then(result=>console.log('Transaction hash:', result))
     .catch(err=>console.error(err))
 }

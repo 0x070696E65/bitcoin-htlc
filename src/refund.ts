@@ -1,38 +1,28 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import { ECPairInterface } from 'ecpair';
 import { witnessStackToScriptWitness } from './witnessStackToScriptWitness';
-import { postTransaction, getTransactionData, getCurrentBlockHeight } from "./utils";
+import { postTransaction, getTransactionData } from "./utils";
 const bip65 = require('bip65');
 
 export async function refund(network: bitcoin.networks.Network, testnet: boolean, baseUrl: string, txId: string, contractAddress: string, witnessScript: string, sender: ECPairInterface, feeSat: number){
     const psbt = new bitcoin.Psbt({network});
     const decompiled = bitcoin.script.decompile(Buffer.from(witnessScript, "hex"))
     if(decompiled == null || decompiled[6] == null) throw new Error("script hasn't lock time");
-    const currentBlockHeight = await getCurrentBlockHeight(baseUrl);
     const lockTime = bitcoin.script.number.decode(decompiled[6] as Buffer);
-
-    /**
-     * もしロック期間よりも現在のブロック高が小さい場合、ここでエラーを発生させている。
-     * ここでエラーを発生させない場合はトランザクションをアナウンスできる。ただし、ロック期間までは返金されない。
-     * 返金の申請後に引き出しトランザクションをアナウンスするとエラーとなるため、アトミックスワップの場合はやり方によっては成立しない気がする。
-     * この問題は解決できるのか、それとも不可能なのか。ちょっと今は分からない。有識者求む。
-     */
-
-    if(currentBlockHeight < lockTime) throw new Error("current block height < lock time block height");
 
     const timelock = bip65.encode({blocks: lockTime})
     psbt.setLocktime(timelock)
 
     const senderAddress = bitcoin.payments.p2wpkh({ pubkey: sender.publicKey, network }).address;
-    const txInfo = await getTransactionData(baseUrl, txId);
+    const txInfo = await getTransactionData(txId);
     let totalValue = 0;
     let value = 0;
 
     let index = 0;
-    for(let i = 0; i < txInfo.outputs.length; i++){
-        totalValue += txInfo.outputs[i].value;
-        if(txInfo.outputs[i].addresses[0] == contractAddress){
-            value = txInfo.outputs[i].value;
+    for(let i = 0; i < txInfo.vout.length; i++){
+        totalValue += txInfo.vout[i].value;
+        if(txInfo.vout[i].scriptpubkey_address == contractAddress){
+            value = txInfo.vout[i].value;
             index = i
         };
     }
@@ -84,7 +74,8 @@ export async function refund(network: bitcoin.networks.Network, testnet: boolean
     console.log('Transaction hexadecimal:')
     const txHex = psbt.extractTransaction().toHex();
     console.log(txHex)
-    postTransaction(baseUrl, txHex, testnet)
-    .then(result=>console.log('Transaction hash:', result.tx.hash))
+
+    postTransaction(txHex)
+    .then(result=>console.log('Transaction hash:', result))
     .catch(err=>console.error(err))
 }

@@ -1,6 +1,7 @@
 import * as bitcoin from 'bitcoinjs-lib';
 import axios from "axios";
 const crypto = require('crypto');
+import mempoolJS from "@mempool/mempool.js";
 
 export interface HashPair {
     secret: string;
@@ -17,18 +18,25 @@ export function createHashPair(): HashPair {
     };
 }
 
-export async function getCurrentBlockHeight(baseUrl: string): Promise<number>{
-    const endpoint = baseUrl;
-    return new Promise(function(resolve, reject) {
-        axios
-        .get(endpoint)
-        .then(res=>{
-            resolve(res.data.height);
-        })
-        .catch(error=>{
-            reject(error)
-        })
-    })
+/**
+ * WIFと指定したアドレスの整合性をチェック
+ */
+export function checkAddressByWif(address: string, wif: string, network: bitcoin.networks.Network) {
+    const keyPair = bitcoin.ECPair.fromWIF(wif, network);
+    const obj = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network });
+    if (obj.address !== address) {
+        console.error("指定されたアドレスとWIFに整合性がありません。");
+        return process.exit(0);;
+    }
+}
+
+const { bitcoin: { transactions, blocks, addresses } } = mempoolJS({
+    hostname: 'mempool.space',
+    network: 'testnet'
+});
+
+export async function getTransactionData(txid: string): Promise<any>{
+    return transactions.getTx({ txid });
 }
 
 /**
@@ -47,15 +55,16 @@ export function buildAndSignTx({
     // input元(utxo)のtxを追加:
     const psbt = new bitcoin.Psbt({ network });
     let total = 0;
+    const pubKeyHash = bitcoin.crypto.hash160(sender.publicKey).toString('hex')
     for (let len = utxos.length, i = 0; i < len; i++) {
-        const { hash, index, value, script } = utxos[i];
+        const { txid, vout, value } = utxos[i];
         psbt.addInput({
-            hash,
-            index,
+            hash: txid,
+            index: vout,
             // sequence: 0xffffffff,
             // IMPORTANT: needs for a tx with witness!
             witnessUtxo: {
-                script: Buffer.from(script, 'hex'),
+                script: Buffer.from('0014' + pubKeyHash, 'hex'),
                 value,
             },
         });
@@ -97,81 +106,25 @@ export function buildAndSignTx({
     return txHex;
 }
 
-/**
- * WIFと指定したアドレスの整合性をチェック
- */
-export function checkAddressByWif(address: string, wif: string, network: bitcoin.networks.Network) {
-    const keyPair = bitcoin.ECPair.fromWIF(wif, network);
-    const obj = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey, network });
-    if (obj.address !== address) {
-        console.error("指定されたアドレスとWIFに整合性がありません。");
-        return process.exit(0);;
-    }
-}
-    
-/**
- * UTXOを取得
- * @return {Array<{hash, index, value, script}>}
- */
-export function getUtxos({ address, testnet = false }: any): Promise<[]> {
-    const endpoint = `https://api.blockcypher.com/v1/btc/${testnet ? "test3" : "main"}/addrs/${address}?unspentOnly=true&includeScript=true`;
-    console.log("Fetching UTXOs from " + endpoint);
-    return new Promise(function(resolve, reject) {
-        axios
-        .get(endpoint)
-        .then((res) => {
-            let txrefs: any = [];
-            if(res.data.txrefs != undefined) txrefs = txrefs.concat(res.data.txrefs);
-            if(res.data.unconfirmed_txrefs != undefined) txrefs = txrefs.concat(res.data.unconfirmed_txrefs);
-            const ret: any = [];
-            for (let len = txrefs.length, i = 0; i < len; i++) {
-                const item = txrefs[i];
-                const hash = item.tx_hash;
-                const index = item.tx_output_n;
-                const value = item.value;
-                const script = item.script;
-                ret.push({
-                hash,
-                index,
-                value,
-                script,
-                });
-            }
-            resolve(ret);
-        })
-        .catch(err=>{
-            reject(err)
-        })
-    })
+export async function getUtxos({ address }: any): Promise<any> {
+    return await addresses.getAddressTxsUtxo({ address });
 }
 
-export async function getTransactionData(baseUrl: string, txId: string): Promise<any>{
-    const endpoint = `${baseUrl}/txs/${txId}`;
-    return new Promise(function(resolve, reject) {
-        axios
-        .get(endpoint)
-        .then((res) => {
-            resolve(res.data)
-        })
-        .catch(err=>{
-            reject(err)
-        })
-    })
+export async function getCurrentBlockHeight(): Promise<number>{
+    return await blocks.getBlocksTipHeight();
 }
 
-export async function postTransaction(baseUrl: string, txHex: string, testnet = false): Promise<any> {
-    const endpoint = `${baseUrl}/txs/push`;
+export async function postTransaction(txhex: string): Promise<any>{  
+    const endpoint = "https://mempool.space/testnet/api/tx";
     console.log("Broadcasting Transaction to " + endpoint);
     return new Promise(function(resolve, reject) {
         axios
-        .post(endpoint, {
-            "tx": txHex
-        })
+        .post(endpoint, txhex)
         .then(res=>{
             resolve(res.data);
         })
         .catch(error=>{
             reject(error)
         })
-    })
+    })  
 }
