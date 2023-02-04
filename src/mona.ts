@@ -4,6 +4,7 @@ import { ECPairInterface } from 'ecpair';
 import ECPairFactory from 'ecpair';
 import * as ecc from 'tiny-secp256k1';
 import { Coin } from "./btcSwap";
+const coininfo = require('coininfo')
 
 const ECPair = ECPairFactory(ecc);
 const validator = (
@@ -13,6 +14,7 @@ const validator = (
 ): boolean => ECPair.fromPublicKey(pubkey).verify(msghash, signature);
 
 export default class Mona implements Coin {
+    public network = coininfo.monacoin.test.toBitcoinJS()
     public baseUrl = "https://testnet.mpchain.info";
 
     async getCurrentBlockHeight(): Promise<number>{
